@@ -3,11 +3,13 @@ import BrandBanner from "@/components/home/BrandBanner";
 import ProductGridSection from "@/components/home/ProductGridSection";
 import BrowseByStyle from "@/components/home/BrowseByStyle";
 import CustomerReviews from "@/components/home/CustomerReviews";
-import { MOCK_PRODUCTS } from "@/data/mockProducts";
+import { productService } from "@/services/productService";
 
-export default function Home() {
-  const newArrivals = MOCK_PRODUCTS.filter((p) => p.isNewArrival);
-  const topSelling = MOCK_PRODUCTS.filter((p) => p.isTopSelling);
+export default async function Home() {
+  const [newArrivals, topSelling] = await Promise.all([
+    productService.getNewArrivals(),
+    productService.getTopSelling(),
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen">

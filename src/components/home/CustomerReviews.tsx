@@ -1,26 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { MOCK_REVIEWS } from '@/data/mockProducts';
+import { productService } from '@/services/productService';
+import { Review } from '@/types';
 import RatingStars from '../common/RatingStars';
 
 export default function CustomerReviews() {
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [startIndex, setStartIndex] = useState(0);
 
+  useEffect(() => {
+    async function fetchReviews() {
+      const data = await productService.getReviews();
+      setReviews(data);
+    }
+    fetchReviews();
+  }, []);
+
   const handleNext = () => {
-    setStartIndex((prev) => (prev + 1) % MOCK_REVIEWS.length);
+    if (reviews.length === 0) return;
+    setStartIndex((prev) => (prev + 1) % reviews.length);
   };
 
   const handlePrev = () => {
-    setStartIndex((prev) => (prev - 1 + MOCK_REVIEWS.length) % MOCK_REVIEWS.length);
+    if (reviews.length === 0) return;
+    setStartIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
   };
+
+  if (reviews.length === 0) {
+    return null;
+  }
 
   // Create infinite wrapping array slice for display
   const visibleReviews = [
-    MOCK_REVIEWS[startIndex],
-    MOCK_REVIEWS[(startIndex + 1) % MOCK_REVIEWS.length],
-    MOCK_REVIEWS[(startIndex + 2) % MOCK_REVIEWS.length],
+    reviews[startIndex % reviews.length],
+    reviews[(startIndex + 1) % reviews.length],
+    reviews[(startIndex + 2) % reviews.length],
   ];
 
   return (

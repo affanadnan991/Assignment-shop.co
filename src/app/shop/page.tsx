@@ -1,64 +1,70 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSortBy } from '@/store/slices/filterSlice';
 import FilterSidebar from '@/components/shop/FilterSidebar';
 import ProductCard from '@/components/common/ProductCard';
-import { MOCK_PRODUCTS } from '@/data/mockProducts';
+import { productService } from '@/services/productService';
+import { Product } from '@/types';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 
 export default function ShopPage() {
   const dispatch = useAppDispatch();
   const filter = useAppSelector((state) => state.filter);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter & Sort Logic
-  const filteredProducts = useMemo(() => {
-    return MOCK_PRODUCTS.filter((product) => {
-      // Category Filter
-      if (filter.category !== 'All' && product.category !== filter.category) {
-        return false;
+  // Fetch products from backend API when filters change
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchProducts() {
+      setLoading(true);
+      const data = await productService.getProducts({
+        category: filter.category,
+        style: filter.style,
+        minPrice: filter.minPrice,
+        maxPrice: filter.maxPrice,
+        search: filter.searchQuery,
+        sortBy: filter.sortBy,
+      });
+
+      if (isMounted) {
+        // Additional color and size client-side filter if colors/sizes array specified
+        let filtered = data;
+        if (filter.colors.length > 0) {
+          filtered = filtered.filter((p) =>
+            p.colors.some((c) => filter.colors.includes(c.name))
+          );
+        }
+        if (filter.sizes.length > 0) {
+          filtered = filtered.filter((p) =>
+            p.sizes.some((s) => filter.sizes.includes(s as any))
+          );
+        }
+
+        setProducts(filtered);
+        setLoading(false);
       }
-      // Style Filter
-      if (filter.style !== 'All' && product.style !== filter.style) {
-        return false;
-      }
-      // Price Filter
-      if (product.price < filter.minPrice || product.price > filter.maxPrice) {
-        return false;
-      }
-      // Color Filter
-      if (
-        filter.colors.length > 0 &&
-        !product.colors.some((c) => filter.colors.includes(c.name))
-      ) {
-        return false;
-      }
-      // Size Filter
-      if (
-        filter.sizes.length > 0 &&
-        !product.sizes.some((s) => filter.sizes.includes(s as any))
-      ) {
-        return false;
-      }
-      // Search Query
-      if (
-        filter.searchQuery &&
-        !product.name.toLowerCase().includes(filter.searchQuery.toLowerCase()) &&
-        !product.description.toLowerCase().includes(filter.searchQuery.toLowerCase())
-      ) {
-        return false;
-      }
-      return true;
-    }).sort((a, b) => {
-      if (filter.sortBy === 'price-low') return a.price - b.price;
-      if (filter.sortBy === 'price-high') return b.price - a.price;
-      if (filter.sortBy === 'newest') return (b.isNewArrival ? 1 : 0) - (a.isNewArrival ? 1 : 0);
-      return b.reviewCount - a.reviewCount; // Most popular
-    });
-  }, [filter]);
+    }
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    filter.category,
+    filter.style,
+    filter.minPrice,
+    filter.maxPrice,
+    filter.colors,
+    filter.sizes,
+    filter.sortBy,
+    filter.searchQuery,
+  ]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -67,7 +73,7 @@ export default function ShopPage() {
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
         <Link href="/" className="hover:text-black transition-colors">Home</Link>
         <span>&gt;</span>
-        <span className="font-semibold text-black">Casual</span>
+        <span className="font-semibold text-black">Shop</span>
       </nav>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -103,7 +109,7 @@ export default function ShopPage() {
             <h1 className="font-integral text-3xl text-black uppercase">
               {filter.category === 'All' ? 'Casual' : filter.category}
               <span className="text-xs font-normal text-gray-500 lowercase ml-2 font-satoshi">
-                Showing {filteredProducts.length} Products
+                Showing {products.length} Products
               </span>
             </h1>
 
@@ -126,9 +132,13 @@ export default function ShopPage() {
           </div>
 
           {/* Product Cards Grid */}
-          {filteredProducts.length > 0 ? (
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black mx-auto" />
+            </div>
+          ) : products.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

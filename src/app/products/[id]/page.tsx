@@ -7,10 +7,9 @@ import { notFound } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { addToCart } from '@/store/slices/cartSlice';
 import { productService } from '@/services/productService';
-import { Product } from '@/types';
+import { Product, Review } from '@/types';
 import RatingStars from '@/components/common/RatingStars';
 import ProductCard from '@/components/common/ProductCard';
-import { MOCK_REVIEWS } from '@/data/mockProducts';
 import { Check, Minus, Plus, CheckCircle2, SlidersHorizontal } from 'lucide-react';
 
 export default function ProductDetailPage({
@@ -23,6 +22,7 @@ export default function ProductDetailPage({
 
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedImage, setSelectedImage] = useState<string>('');
@@ -35,7 +35,11 @@ export default function ProductDetailPage({
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const prod = await productService.getProductById(id);
+      const [prod, revs] = await Promise.all([
+        productService.getProductById(id),
+        productService.getReviews(),
+      ]);
+
       if (prod) {
         setProduct(prod);
         setSelectedImage(prod.imageUrl);
@@ -45,6 +49,7 @@ export default function ProductDetailPage({
         const related = await productService.getRelatedProducts(prod.category, prod.id);
         setRelatedProducts(related);
       }
+      setReviews(revs);
       setLoading(false);
     }
     loadData();
@@ -299,7 +304,7 @@ export default function ProductDetailPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {MOCK_REVIEWS.map((review) => (
+              {reviews.map((review) => (
                 <div
                   key={review.id}
                   className="border border-gray-200 rounded-2xl p-6 space-y-3 bg-white"

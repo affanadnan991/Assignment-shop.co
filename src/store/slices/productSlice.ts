@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Product } from '@/types';
-import { MOCK_PRODUCTS } from '@/data/mockProducts';
 
 interface ProductState {
   products: Product[];
@@ -10,7 +9,7 @@ interface ProductState {
 }
 
 const initialState: ProductState = {
-  products: MOCK_PRODUCTS,
+  products: [],
   selectedProduct: null,
   status: 'idle',
   error: null,
@@ -22,12 +21,19 @@ const productSlice = createSlice({
   reducers: {
     setProducts: (state, action: PayloadAction<Product[]>) => {
       state.products = action.payload;
+      state.status = 'succeeded';
     },
     setSelectedProduct: (state, action: PayloadAction<Product | null>) => {
       state.selectedProduct = action.payload;
     },
+    setStatus: (state, action: PayloadAction<'idle' | 'loading' | 'succeeded' | 'failed'>) => {
+      state.status = action.payload;
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+    }
   },
 });
 
-export const { setProducts, setSelectedProduct } = productSlice.actions;
+export const { setProducts, setSelectedProduct, setStatus, setError } = productSlice.actions;
 export default productSlice.reducer;
