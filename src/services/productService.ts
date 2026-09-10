@@ -1,6 +1,6 @@
 import { Product, Review } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export const productService = {
   // Get all products (with optional filtering and sorting)
@@ -24,14 +24,13 @@ export const productService = {
         });
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/products?${queryParams.toString()}`, {
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('Failed to fetch products');
+      const endpoint = `${API_BASE_URL}/api/products?${queryParams.toString()}`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (error) {
-      console.error('Error in getProducts:', error);
+      console.error('Error in getProducts API call:', error);
       return [];
     }
   },
@@ -39,14 +38,13 @@ export const productService = {
   // Get product by ID or Slug
   async getProductById(idOrSlug: string): Promise<Product | undefined> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/products/${idOrSlug}`, {
-        cache: 'no-store'
-      });
+      const endpoint = `${API_BASE_URL}/api/products/${idOrSlug}`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
       if (!res.ok) return undefined;
       const json = await res.json();
       return json.data;
     } catch (error) {
-      console.error('Error in getProductById:', error);
+      console.error('Error in getProductById API call:', error);
       return undefined;
     }
   },
@@ -54,14 +52,13 @@ export const productService = {
   // Get New Arrivals
   async getNewArrivals(): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/products/new-arrivals`, {
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('Failed to fetch new arrivals');
+      const endpoint = `${API_BASE_URL}/api/products/new-arrivals`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (error) {
-      console.error('Error in getNewArrivals:', error);
+      console.error('Error in getNewArrivals API call:', error);
       return [];
     }
   },
@@ -69,14 +66,13 @@ export const productService = {
   // Get Top Selling Products
   async getTopSelling(): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/products/top-selling`, {
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('Failed to fetch top selling');
+      const endpoint = `${API_BASE_URL}/api/products/top-selling`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (error) {
-      console.error('Error in getTopSelling:', error);
+      console.error('Error in getTopSelling API call:', error);
       return [];
     }
   },
@@ -84,14 +80,13 @@ export const productService = {
   // Get Related Products
   async getRelatedProducts(category: string, currentId: string): Promise<Product[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/products/${currentId}/related`, {
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('Failed to fetch related products');
+      const endpoint = `${API_BASE_URL}/api/products/${currentId}/related`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (error) {
-      console.error('Error in getRelatedProducts:', error);
+      console.error('Error in getRelatedProducts API call:', error);
       return [];
     }
   },
@@ -99,14 +94,13 @@ export const productService = {
   // Get Customer Reviews
   async getReviews(): Promise<Review[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/reviews`, {
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('Failed to fetch reviews');
+      const endpoint = `${API_BASE_URL}/api/reviews`;
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const json = await res.json();
       return json.data || [];
     } catch (error) {
-      console.error('Error in getReviews:', error);
+      console.error('Error in getReviews API call:', error);
       return [];
     }
   }
