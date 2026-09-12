@@ -18,6 +18,14 @@ export default function CartPage() {
   const [promoInput, setPromoInput] = useState('');
   const [promoMessage, setPromoMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
+  // Checkout Modal State
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [branch, setBranch] = useState('USA');
+  const [paymentType, setPaymentType] = useState('Card');
+  const [placingOrder, setPlacingOrder] = useState(false);
+
   // Calculations
   const subtotal = items.reduce(
     (acc, item) => acc + item.product.price * item.quantity,
@@ -26,6 +34,55 @@ export default function CartPage() {
   const discountAmount = subtotal * discountRate;
   const deliveryFee = items.length > 0 ? 15 : 0;
   const total = subtotal - discountAmount + deliveryFee;
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName.trim() || !customerEmail.trim()) {
+      return alert('Please enter customer name and email.');
+    }
+
+    setPlacingOrder(true);
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+    try {
+      const orderPayload = {
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
+        branch,
+        paymentType,
+        quantity: items.reduce((sum, i) => sum + i.quantity, 0),
+        totalAmount: Number(total.toFixed(2)),
+        status: 'Pending',
+        items: items.map((i) => ({
+          id: i.product.id,
+          name: i.product.name,
+          price: i.product.price,
+          quantity: i.quantity,
+          selectedColor: i.selectedColor,
+          selectedSize: i.selectedSize
+        }))
+      };
+
+      const res = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        alert(`🎉 Order Placed Successfully!\nOrder ID: ${json.data.id}\nYour order has been sent to shop.co for verification.`);
+        dispatch(clearCart());
+        setIsCheckoutOpen(false);
+      } else {
+        alert('Failed to place order: ' + (json.message || 'Unknown error'));
+      }
+    } catch (err: any) {
+      alert('Error connecting to backend: ' + err.message);
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   const handleApplyPromo = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +100,7 @@ export default function CartPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      
+
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <Link href="/" className="hover:text-black transition-colors">Home</Link>
@@ -73,15 +130,14 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Cart Items List */}
           <div className="lg:col-span-7 border border-gray-200 rounded-3xl p-6 space-y-6 bg-white">
             {items.map((item, idx) => (
               <div
                 key={`${item.product.id}-${item.selectedColor.hex}-${item.selectedSize}-${idx}`}
-                className={`flex gap-4 sm:gap-6 ${
-                  idx !== items.length - 1 ? 'border-b border-gray-100 pb-6' : ''
-                }`}
+                className={`flex gap-4 sm:gap-6 ${idx !== items.length - 1 ? 'border-b border-gray-100 pb-6' : ''
+                  }`}
               >
                 {/* Product Thumbnail */}
                 <div className="relative w-24 h-24 sm:w-32 sm:h-32 bg-[#F0EEED] rounded-2xl overflow-hidden flex-shrink-0">
@@ -245,7 +301,7 @@ export default function CartPage() {
 
             {/* Checkout Button */}
             <button
-              onClick={() => alert('Proceeding to Checkout! Backend integration ready.')}
+              onClick={() => setIsCheckoutOpen(true)}
               className="w-full bg-black text-white text-base font-medium py-4 rounded-full flex items-center justify-center gap-3 hover:bg-gray-800 transition-colors shadow-xl"
             >
               Go to Checkout <ArrowRight className="w-5 h-5" />
@@ -253,6 +309,108 @@ export default function CartPage() {
 
           </div>
 
+        </div>
+      )}
+
+      {/* CHECKOUT MODAL */}
+      {isCheckoutOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b pb-4">
+              <h3 className="font-bold text-xl text-black">Checkout & Place Order</h3>
+              <button
+                onClick={() => setIsCheckoutOpen(false)}
+                className="text-gray-400 hover:text-black font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handlePlaceOrder} className="space-y-4 text-sm">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. John Doe"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-black focus:outline-none focus:border-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 font-semibold mb-1">Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. john@example.com"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-black focus:outline-none focus:border-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Branch / Country</label>
+                  <select
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2.5 text-black focus:outline-none focus:border-black"
+                  >
+                    <option value="USA">USA</option>
+                    <option value="Canada">Canada</option>
+                    <option value="UK">UK</option>
+                    <option value="India">India</option>
+                    <option value="Germany">Germany</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Payment Method</label>
+                  <select
+                    value={paymentType}
+                    onChange={(e) => setPaymentType(e.target.value)}
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2.5 text-black focus:outline-none focus:border-black"
+                  >
+                    <option value="Card">Card</option>
+                    <option value="Paypal">Paypal</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Cash">Cash</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4 space-y-2 text-xs text-gray-600">
+                <div className="flex justify-between">
+                  <span>Items Count:</span>
+                  <span className="font-bold text-black">{items.reduce((s, i) => s + i.quantity, 0)}</span>
+                </div>
+                <div className="flex justify-between text-base font-bold text-black pt-1 border-t">
+                  <span>Order Total:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCheckoutOpen(false)}
+                  className="px-5 py-2.5 rounded-full text-gray-500 hover:text-black font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={placingOrder}
+                  className="px-7 py-2.5 rounded-full bg-black text-white font-bold hover:bg-gray-800 shadow-lg disabled:opacity-50"
+                >
+                  {placingOrder ? 'Processing...' : 'Place Order'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

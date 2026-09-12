@@ -45,3 +45,19 @@ export interface FilterState {
   sortBy: 'most-popular' | 'newest' | 'price-low' | 'price-high';
   searchQuery: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  createdAt?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isAuthModalOpen: boolean;
+  authModalTab: 'login' | 'signup';
+}

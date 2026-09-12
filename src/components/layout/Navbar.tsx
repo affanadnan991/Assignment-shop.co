@@ -1,20 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingCart, User, ChevronDown, Menu, X } from 'lucide-react';
+import { Search, ShoppingCart, User, ChevronDown, Menu, X, LogOut, Package, UserCheck } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSearchQuery, setCategory, setStyle } from '@/store/slices/filterSlice';
+import { openAuthModal, logout } from '@/store/slices/authSlice';
 
 export default function Navbar() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   const cartItems = useAppSelector((state) => state.cart.items);
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -32,6 +42,19 @@ export default function Navbar() {
     }
     setIsShopDropdownOpen(false);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleUserIconClick = () => {
+    if (isAuthenticated) {
+      setIsUserDropdownOpen(!isUserDropdownOpen);
+    } else {
+      dispatch(openAuthModal('login'));
+    }
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    setIsUserDropdownOpen(false);
   };
 
   return (
@@ -152,19 +175,73 @@ export default function Navbar() {
               aria-label="Shopping Cart"
             >
               <ShoppingCart className="w-6 h-6" />
-              {totalCartCount > 0 && (
+              {isMounted && totalCartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-scale-up">
                   {totalCartCount > 99 ? '99+' : totalCartCount}
                 </span>
               )}
             </Link>
 
-            <button
-              className="p-2 text-black hover:text-gray-600 transition-colors"
-              aria-label="User Account"
-            >
-              <User className="w-6 h-6" />
-            </button>
+            {/* User Profile / Auth Button */}
+            <div className="relative">
+              <button
+                onClick={handleUserIconClick}
+                className="p-2 text-black hover:text-gray-600 transition-colors flex items-center gap-1.5"
+                aria-label="User Account"
+              >
+                {isMounted && isAuthenticated && user ? (
+                  <div className="w-7 h-7 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center border border-black shadow-sm">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                ) : (
+                  <User className="w-6 h-6" />
+                )}
+              </button>
+
+              {/* Logged In User Dropdown Menu */}
+              {isMounted && isAuthenticated && isUserDropdownOpen && (
+                <div
+                  className="absolute top-full right-0 w-56 bg-white border border-gray-100 shadow-2xl rounded-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+                  onMouseLeave={() => setIsUserDropdownOpen(false)}
+                >
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-sm font-bold text-black truncate">{user?.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                  </div>
+
+                  <Link
+                    href="/cart"
+                    onClick={() => setIsUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Package className="w-4 h-4 text-gray-500" />
+                    My Orders
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setIsUserDropdownOpen(false);
+                      dispatch(openAuthModal('login'));
+                    }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <UserCheck className="w-4 h-4 text-gray-500" />
+                    Account Settings
+                  </button>
+
+                  <hr className="my-1 border-gray-100" />
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left font-medium"
+                  >
+                    <LogOut className="w-4 h-4 text-red-600" />
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
@@ -218,6 +295,31 @@ export default function Navbar() {
           >
             Brands
           </Link>
+          {isMounted && isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left text-lg font-medium text-red-600 py-2"
+            >
+              Log Out ({user?.name})
+            </button>
+          ) : (
+            <div className="flex gap-3 pt-2">
+              <Link
+                href="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex-1 bg-[#F0F0F0] text-black text-center py-2.5 rounded-full text-sm font-semibold"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex-1 bg-black text-white text-center py-2.5 rounded-full text-sm font-semibold"
+              >
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

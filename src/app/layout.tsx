@@ -5,6 +5,7 @@ import { ReduxProvider } from "@/store/provider";
 import TopBanner from "@/components/layout/TopBanner";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import AuthModal from "@/components/auth/AuthModal";
 
 const montserrat = Montserrat({
   variable: "--font-integral",
@@ -33,12 +34,13 @@ export default function RootLayout({
       lang="en"
       className={`${montserrat.variable} ${inter.variable} antialiased h-full`}
     >
-      <body className="min-h-full flex flex-col font-satoshi bg-white text-black selection:bg-black selection:text-white">
+      <body className="min-h-full flex flex-col font-satoshi bg-[#FFFFFF] text-black selection:bg-black selection:text-white">
         <ReduxProvider>
           <TopBanner />
           <Navbar />
           <main className="flex-grow">{children}</main>
           <Footer />
+          <AuthModal />
         </ReduxProvider>
       </body>
     </html>
