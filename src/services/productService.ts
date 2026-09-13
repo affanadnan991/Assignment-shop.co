@@ -1,6 +1,14 @@
 import { Product, Review } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const getApiBaseUrl = () => {
+  let envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  if (envUrl.endsWith('/')) {
+    envUrl = envUrl.slice(0, -1);
+  }
+  return envUrl;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const productService = {
   // Get all products (with optional filtering and sorting)
